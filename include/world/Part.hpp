@@ -3,19 +3,14 @@
 
 
 #include <ros/ros.h>
-#include <world/Container.hpp>
-#include <world/NoneContainer.hpp>
 #include <geometry_msgs/Pose.h>
 #include <memory>
 
 namespace world {
 	
 	
-	
-	static std::shared_ptr<Container> none_container = std::make_shared<NoneContainer>("None");
-	
-	double getPartSize( std::string );
-
+	class Container;
+	std::string getTypeFromName( std::string name );
 
 	class Part {
 		
@@ -27,19 +22,19 @@ namespace world {
 			static const int REMOVED = 3; 
 			
 			
-			Part( std::string name, std::string type, geometry_msgs::Pose pose, int state = INVALID )
+			Part( std::string name, geometry_msgs::Pose pose, Container * none_container )
 			:	m_name(name),
-				m_type(type),
+				m_type( getTypeFromName(name) ),
 				m_size( getSize() ),
 				m_pose(pose),
 				m_location(none_container),
-				m_state(state)
+				m_state(INVALID)
 			{
 			}
 			
 
-			void setPlaced( std::shared_ptr<Container> location );
-			void setGrabbed( std::shared_ptr<Container> location );
+			void setPlaced( Container* location );
+			void setGrabbed( Container* location );
 			void setRemoved();
 			
 			
@@ -47,10 +42,11 @@ namespace world {
 			std::string getType() const	{ return m_type; }
 			
 			geometry_msgs::Pose getPose() const { return m_pose; }
-			const std::shared_ptr<Container> getLocation() const { return m_location; }
+			const Container* getLocation() const { return m_location; }
 			std::string getState() const;
 			double getSize() const;
 			
+			void printPart();
 			
 		
 		private:
@@ -59,7 +55,7 @@ namespace world {
 			std::string m_type;
 			double m_size;
 			geometry_msgs::Pose m_pose;
-			std::shared_ptr<Container> m_location;
+			Container* m_location;
 			int m_state;
 	};
 	

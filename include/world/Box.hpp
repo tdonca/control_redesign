@@ -5,49 +5,33 @@
 
 namespace world {
 	
+	class Part;
 	class Box: public Container {
 		
 		public:
 		
 			Box( std::string name ) 
-			:	m_name(name)
+			:	m_name(name),
+				m_parts()
 			{}
 			
-			std::string getName() const { return m_name; }
+			virtual std::string getName() const;
 			
-			std::vector<std::string> getParts() const {return m_parts; }
+			virtual std::vector< Part > getParts() const;
 			
+			virtual void addPart( std::shared_ptr<Part> part_ptr );
 			
-			void addPart( std::string part ){
-				m_parts.push_back(part);
-			}
+			virtual std::shared_ptr<Part> removePart( std::string part_name );
 			
-			
-			
-			void removePart( std::string part ){
-				int ix = -1;
-				// find
-				for(int i = 0; i < m_parts.size(); ++i){
-					if(m_parts[i] == part){
-						ix = i;
-					}
-				} 
-				if(ix != -1){
-					//swap
-					m_parts[ix] = m_parts.back();
-					//pop
-					m_parts.pop_back();
-				}
-				
-			}
+			virtual void printContainer();
 			
 			~Box() {}
 			
 		private:
 		
 			const std::string m_name;
-			std::vector<std::string> m_parts;
-		
+			ContainerPartsMap m_parts;
+			
 	};
 }
 

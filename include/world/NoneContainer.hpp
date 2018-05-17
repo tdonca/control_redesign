@@ -3,30 +3,36 @@
 
 #include <world/Container.hpp>
 
+
 namespace world {
 	
+	class Part;
 	class NoneContainer: public Container {
 		
 		public:
 		
 			NoneContainer( std::string name ) 
-			:	m_name(name)
+			:	m_name("None"),
+				m_parts()
 			{}
 			
 			std::string getName() const { return m_name; }
 			
-			std::vector<std::string> getParts() const {return m_parts; }
 			
-			void addPart( std::string part ){}
+			std::vector< Part > getParts() const {return m_parts; }
 			
-			void removePart( std::string part ){}
+			void addPart( std::shared_ptr<Part> part_ptr ){}
+			
+			std::shared_ptr<Part> removePart( std::string part_name ){ return nullptr; }
+			
+			void printContainer() {}
 			
 			~NoneContainer() {}
 			
 		private:
 		
 			const std::string m_name;
-			std::vector<std::string> m_parts;
+			std::vector<Part> m_parts;
 		
 	};
 	

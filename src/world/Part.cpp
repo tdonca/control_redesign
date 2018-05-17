@@ -1,70 +1,79 @@
 #include <world/Part.hpp>
-
-
+#include <world/Container.hpp>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2/LinearMath/Matrix3x3.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 
 namespace world {
 	
 	double getPartSize( std::string type );
 	std::string stateToString( int state );
+	void getRPY( const geometry_msgs::Pose  pose, double & r, double & p, double & y );
 	
 	
-	void Part::setPlaced( std::shared_ptr<Container> location ){
-		ROS_INFO("Placing Part %s in %s:", m_name.c_str(), location->getName().c_str());
+	void Part::setPlaced( Container* location ){
 		
-		ROS_INFO("Remove association with current location: %s", m_location->getName().c_str());
-		m_location->removePart( m_name );
-		
-		
-		ROS_INFO("Create association with new location: %s\n", location->getName().c_str());
-		location->addPart( m_name );
+		ROS_INFO("Placing Part %s in %s.", m_name.c_str(), location->getName().c_str());
 		m_location = location;
-		
 		
 		m_state = PLACED;
 	}
 	
 	
-	void Part::setGrabbed( std::shared_ptr<Container> location ){
-		ROS_INFO("Grabbing Part %s:", m_name.c_str());
-		
-		ROS_INFO("Remove association with current location: %s", m_location->getName().c_str());
-		m_location->removePart( m_name );
-		
-		ROS_INFO("Create association with robot EE: %s\n", location->getName().c_str());
-		location->addPart( m_name );
+	
+	void Part::setGrabbed( Container* location ){
+		ROS_INFO("Grabbing Part %s into %s.", m_name.c_str(), location->getName().c_str());
 		m_location = location;
-		
 		
 		m_state = GRABBED;
 	}
 	
 	
+	
 	void Part::setRemoved(){
-		ROS_INFO("Removing Part %s:", m_name.c_str());
-		
-		ROS_INFO("Remove association with current location: %s", m_location->getName().c_str());
-		m_location->removePart( m_name );
-		
-		
-		ROS_INFO("Remove from the world.\n");
-		m_location = none_container;
-		
+		ROS_INFO("Removing Part %s from the world.", m_name.c_str());
+		m_location = nullptr;
 		
 		m_state = REMOVED;
 	}
 	
+	
+	
 	std::string Part::getState() const { 
 		return stateToString(m_state); 
 	}
+	
+	
 	
 	double Part::getSize() const {
 		return getPartSize( m_type );
 	}
 	
 	
+	void Part::printPart() {
+		
+		double r, p, y;
+		getRPY( getPose(), r, p, y );
+
+		ROS_INFO("Name: %s", getName().c_str());
+		ROS_INFO("Type: %s", getType().c_str());
+		ROS_INFO("State: %s", getState().c_str());
+		ROS_INFO("Container: %s", getLocation()->getName().c_str());
+		ROS_INFO("Position: %.3f, %.3f, %.3f", getPose().position.x, getPose().position.y, getPose().position.z);
+		ROS_INFO("Orientation: %.3f, %.3f, %.3f, %.3f", getPose().orientation.x, getPose().orientation.y, getPose().orientation.z, getPose().orientation.w);
+		ROS_INFO("RollPitchYaw: %.3f, %.3f, %.3f", r, p, y);
+		ROS_INFO(" ");
+	}
 	
 	
+	void getRPY( const geometry_msgs::Pose  pose, double & r, double & p, double & y ){
+		
+		tf2::Quaternion arm_q;
+		tf2::fromMsg( pose.orientation, arm_q );
+		tf2::Matrix3x3(arm_q).getRPY( r, p, y );
+		
+	}
 	
 	
 	double getPartSize( std::string type ){
