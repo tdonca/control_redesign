@@ -90,13 +90,27 @@ namespace world {
 	
 	bool WorldState::addSensor( Sensor* sensor ){
 		
+		ROS_INFO("Adding sensor %s to the world.", sensor->getName().c_str());
+		std::unique_ptr<Sensor> s( sensor );
+		m_sensors[ sensor->getName() ] = std::move(s);
+		ROS_INFO("There are now %lu sensors.", m_sensors.size());
 		
 		return true;
 	}
 	
+	
+	
 	bool WorldState::removeSensor( std::string name ){
 	
-		
+		if( m_sensors[name] != nullptr ){
+			ROS_INFO("Removing %s from the world.", name.c_str());
+			m_sensors[name] = nullptr;
+		}
+		else{
+			ROS_ERROR("Could not remove %s, it does not exist!", name.c_str());
+			return false;
+		}
+
 		return true;
 	}	
 	
@@ -105,7 +119,7 @@ namespace world {
 	bool WorldState::testFunction(){
 		
 		
-		// create a few parts
+		// create pose
 		ROS_INFO("Create three parts");
 		geometry_msgs::Pose pose;
 		pose.position.x = 0.5;
@@ -116,6 +130,8 @@ namespace world {
 		pose.orientation.z = 0.0;
 		pose.orientation.w = 1.0;
 		
+		
+		// create parts
 		Part p1("gear_part_12", pose, &m_removed);
 		Part p2("pulley_part_1", pose, &m_removed);
 		Part p3("disk_part_99", pose, &m_removed);
@@ -125,26 +141,49 @@ namespace world {
 		Box b1("BOX0");
 		addBox(b1);
 		ROS_INFO(" ");
-		
-		
-		// print container info
 		m_bins[0].printContainer();
 		m_bins[4].printContainer();
-
-
+		
+		
+		// create sensors
+		std::unique_ptr<Sensor> s1 =  std::unique_ptr<Sensor>( new LogicalCameraSensor("logical_camera_1") );
+		std::unique_ptr<Sensor> s2 =  std::unique_ptr<Sensor>( new LogicalCameraSensor("logical_camera_2") );
+		std::unique_ptr<Sensor> s3 =  std::unique_ptr<Sensor>( new LogicalCameraSensor("logical_camera_3") );
+		std::unique_ptr<Sensor> s4 =  std::unique_ptr<Sensor>( new LogicalCameraSensor("logical_camera_4") );
+		std::unique_ptr<Sensor> s5 =  std::unique_ptr<Sensor>( new LogicalCameraSensor("logical_camera_5") );
+		std::unique_ptr<Sensor> s6 =  std::unique_ptr<Sensor>( new LogicalCameraSensor("logical_camera_6") );
+		m_bins[0].connectSensor( s1.get() );
+		m_bins[1].connectSensor( s2.get() );
+		m_bins[2].connectSensor( s3.get() );
+		m_bins[3].connectSensor( s4.get() );
+		m_bins[4].connectSensor( s5.get() );
+		m_boxes[0]->connectSensor( s6.get() );
+		m_sensors[s1->getName()] = std::move(s1);
+		m_sensors[s2->getName()] = std::move(s2);
+		m_sensors[s3->getName()] = std::move(s3);
+		m_sensors[s4->getName()] = std::move(s4);
+		m_sensors[s5->getName()] = std::move(s5);
+		m_sensors[s6->getName()] = std::move(s6);
+		
+		
+		// detect parts
+		m_bins[0].getSensor()->addPart(p1); // sensor1
+		m_bins[0].getSensor()->addPart(p2); // sensor1
+		m_bins[4].getSensor()->addPart(p3); // sensor5
+		for( int i = 0; i < m_bins.size(); ++i ){
+			m_bins[i].getSensor()->printSensor();
+		}
+		m_boxes[0]->getSensor()->printSensor();
+		
+		
+		// move parts around
 		ROS_INFO("Move the parts around");
 		m_gripper.addPart( m_bins[0].removePart("gear_part_12") );
 		m_bins[0].printContainer();
 		m_gripper.printContainer();
-		
-		
-		
 		m_boxes[0]->addPart( m_gripper.removePart("gear_part_12") );
 		m_gripper.printContainer();
 		m_boxes[0]->printContainer();
-		
-		
-		
 		m_gripper.addPart( m_boxes[0]->removePart("gear_part_12") );
 		m_bins[2].addPart( m_gripper.removePart("gear_part_12") );
 		m_bins[0].printContainer();
@@ -153,6 +192,7 @@ namespace world {
 		m_bins[3].printContainer();
 		m_bins[4].printContainer();
 		m_gripper.printContainer();
+		
 		
 		// submit the box
 		removeBox();

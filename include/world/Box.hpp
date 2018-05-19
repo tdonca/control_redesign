@@ -5,14 +5,15 @@
 
 namespace world {
 	
-	class Part;
+	
 	class Box: public Container {
 		
 		public:
 		
 			Box( std::string name ) 
 			:	m_name(name),
-				m_parts()
+				m_parts(),
+				m_sensor()
 			{}
 			
 			virtual std::string getName() const;
@@ -23,6 +24,10 @@ namespace world {
 			
 			virtual std::shared_ptr<Part> removePart( std::string part_name );
 			
+			virtual bool connectSensor( Sensor* sensor );
+			
+			virtual Sensor* getSensor() { return m_sensor; }
+			
 			virtual void printContainer();
 			
 			~Box() {}
@@ -31,6 +36,7 @@ namespace world {
 		
 			const std::string m_name;
 			ContainerPartsMap m_parts;
+			Sensor* m_sensor;
 			
 	};
 }

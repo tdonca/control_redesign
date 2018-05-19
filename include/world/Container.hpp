@@ -5,13 +5,14 @@
 #include <vector>
 #include <string>
 #include <memory>
-#include <map>
+#include <unordered_map>
 
 
 namespace world {
 	
 	class Part;
-	typedef std::map< std::string, std::shared_ptr<Part> > ContainerPartsMap;
+	class Sensor;
+	typedef std::unordered_map< std::string, std::shared_ptr<Part> > ContainerPartsMap;
 	
 	class Container {
 		
@@ -25,6 +26,9 @@ namespace world {
 			
 			virtual std::shared_ptr<Part> removePart( std::string part_name ) = 0;
 			
+			virtual bool connectSensor( Sensor* sensor ) = 0;
+			
+			virtual Sensor* getSensor() = 0;
 			// move implementation to here so that there is less code duplication
 			virtual void printContainer() = 0;
 			

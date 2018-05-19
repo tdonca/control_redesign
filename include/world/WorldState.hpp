@@ -13,11 +13,12 @@
 #include <world/Sensor.hpp>
 #include <world/LogicalCameraSensor.hpp>
 
+
 namespace world {
 						//type					//name
-	typedef std::map< std::string, std::map< std::string, std::weak_ptr<Part> > > WorldPartsMap;
+	typedef std::unordered_map< std::string, std::unordered_map< std::string, std::weak_ptr<Part> > > WorldPartsMap;
 						//name				
-	typedef std::map< std::string, std::shared_ptr<Sensor> > SensorMap;
+	typedef std::unordered_map< std::string, std::unique_ptr<Sensor> > SensorMap;
 	
 	class WorldState {
 		

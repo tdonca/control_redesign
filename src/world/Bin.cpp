@@ -1,7 +1,7 @@
 #include <world/Bin.hpp>
 #include <ros/ros.h>
 #include <world/Part.hpp>
-
+#include <world/Sensor.hpp>
 
 namespace world {
 	
@@ -55,7 +55,18 @@ namespace world {
 	}
 	
 	
+	bool Bin::connectSensor( Sensor* sensor ){
 	
+		if( sensor != nullptr ){
+			ROS_INFO("Connecting sensor %s to %s", sensor->getName().c_str(), getName().c_str());
+			m_sensor = sensor;
+			return true;
+		}
+		else{
+			ROS_ERROR("Invalid sensor provided!");
+			return false;
+		}
+	}
 	
 
 	void Bin::printContainer(){

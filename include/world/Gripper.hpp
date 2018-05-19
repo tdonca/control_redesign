@@ -5,7 +5,7 @@
 
 namespace world {
 	
-	class Part;
+	
 	class Gripper: public Container {
 		
 		public:
@@ -22,6 +22,10 @@ namespace world {
 			virtual void addPart( std::shared_ptr<Part> part_ptr );
 			
 			virtual std::shared_ptr<Part> removePart( std::string part_name );
+			
+			virtual bool connectSensor( Sensor* sensor ) { return false; }
+			
+			virtual Sensor* getSensor() { return nullptr; }
 			
 			virtual void printContainer();
 			

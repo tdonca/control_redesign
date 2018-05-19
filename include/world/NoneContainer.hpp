@@ -6,7 +6,7 @@
 
 namespace world {
 	
-	class Part;
+	
 	class NoneContainer: public Container {
 		
 		public:
@@ -24,6 +24,10 @@ namespace world {
 			void addPart( std::shared_ptr<Part> part_ptr ){}
 			
 			std::shared_ptr<Part> removePart( std::string part_name ){ return nullptr; }
+			
+			virtual bool connectSensor( Sensor* sensor ) { return false; }
+			
+			virtual Sensor* getSensor() { return nullptr; }
 			
 			void printContainer() {}
 			
