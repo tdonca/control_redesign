@@ -19,9 +19,9 @@ namespace world {
 	}
 			
 	
-
-			
-			
+	
+	
+	
 	void Bin::addPart(  std::shared_ptr<Part> part_ptr ){
 		
 		// only add the part if it doesn't already exist
@@ -55,6 +55,23 @@ namespace world {
 	}
 	
 	
+	
+	
+	bool Bin::updatePartPose( std::string part_name, geometry_msgs::Pose pose ) {
+		
+		if( m_parts[part_name] != nullptr ){
+			m_parts[part_name]->updatePose(pose);
+			return true;
+		}
+		else{
+			ROS_ERROR("Could not update %s pose in %s, the part does not exist!", part_name.c_str(), getName().c_str());
+			return false;
+		}
+	}
+	
+	
+	
+	
 	bool Bin::connectSensor( Sensor* sensor ){
 	
 		if( sensor != nullptr ){
@@ -68,7 +85,7 @@ namespace world {
 		}
 	}
 	
-
+	
 	void Bin::printContainer(){
 		
 		std::vector< Part > parts = getParts();

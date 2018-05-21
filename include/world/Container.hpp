@@ -6,13 +6,14 @@
 #include <string>
 #include <memory>
 #include <unordered_map>
-
+#include <geometry_msgs/Pose.h>
 
 namespace world {
 	
 	class Part;
 	class Sensor;
 	typedef std::unordered_map< std::string, std::shared_ptr<Part> > ContainerPartsMap;
+	typedef std::unordered_map< std::string, Part > PartsMap;
 	
 	class Container {
 		
@@ -25,6 +26,8 @@ namespace world {
 			virtual void addPart( std::shared_ptr<Part> part_ptr ) = 0;
 			
 			virtual std::shared_ptr<Part> removePart( std::string part_name ) = 0;
+			
+			virtual bool updatePartPose( std::string part_name, geometry_msgs::Pose pose ) = 0;
 			
 			virtual bool connectSensor( Sensor* sensor ) = 0;
 			

@@ -127,7 +127,18 @@ add_executable( test_server src/world/test_server.cpp )
 add_dependencies( test_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} )
 target_link_libraries( test_server ${catkin_LIBRARIES} )
 # Link other class files
-target_sources( test_server PUBLIC src/world/WorldState.cpp src/world/Part.cpp src/world/Bin.cpp src/world/Box.cpp src/world/Gripper.cpp src/world/LogicalCameraSensor.cpp  )
+target_sources( test_server 
+	PUBLIC 
+		src/world/WorldState.cpp 
+		src/world/Part.cpp 
+		src/world/Bin.cpp 
+		src/world/Box.cpp 
+		src/world/Gripper.cpp 
+		src/world/LogicalCameraSensor.cpp 
+		src/world/IIWA14Robot.cpp 
+		src/world/StateGraph.cpp
+		
+)
 
 
 

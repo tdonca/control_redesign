@@ -24,6 +24,8 @@ namespace world {
 			
 			virtual std::shared_ptr<Part> removePart( std::string part_name );
 			
+			virtual bool updatePartPose( std::string part_name, geometry_msgs::Pose pose );
+			
 			virtual bool connectSensor( Sensor* sensor );
 			
 			virtual Sensor* getSensor() { return m_sensor; }

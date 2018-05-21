@@ -12,6 +12,10 @@
 #include <world/NoneContainer.hpp>
 #include <world/Sensor.hpp>
 #include <world/LogicalCameraSensor.hpp>
+#include <world/Robot.hpp>
+#include <world/IIWA14Robot.hpp>
+#include <world/StateGraph.hpp>
+
 
 
 namespace world {
@@ -29,8 +33,9 @@ namespace world {
 				m_boxes(),
 				m_removed("None"),
 				m_sensors(),
-				m_gripper("ROBOT"),
-				m_parts()
+				m_gripper("Gripper"),
+				m_parts(),
+				m_robot()
 			{
 				if( initializeWorld() ){
 					ROS_INFO("Initialized the world.");
@@ -40,7 +45,7 @@ namespace world {
 				}
 			}
 			
-			bool addPart( Part part, int bin );
+			bool addNewPart( Part part, int bin );
 			
 			bool removePart ( std::string part_name );
 			
@@ -48,9 +53,13 @@ namespace world {
 			
 			bool removeBox();
 			
-			bool addSensor( Sensor* sensor );
+			bool addSensor( std::string sensor_name );
 			
 			bool removeSensor( std::string sensor_name );
+			
+			bool addRobot( std::unique_ptr<Robot> robot );
+			
+			bool removeRobot( std::string robot_name );
 			
 			bool testFunction();
 			
@@ -58,12 +67,17 @@ namespace world {
 		
 			bool initializeWorld();
 			
+			void cb_updateParts();
+			
+			
 			std::vector<Bin> m_bins;
 			std::deque< std::unique_ptr<Box> > m_boxes;
 			NoneContainer m_removed;
 			SensorMap m_sensors;
 			Gripper m_gripper;
 			WorldPartsMap m_parts;
+			std::unique_ptr<Robot> m_robot;
+			StateGraph m_graph;
 	};
 	
 }

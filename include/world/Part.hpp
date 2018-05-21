@@ -28,7 +28,9 @@ namespace world {
 				m_size( getSize() ),
 				m_pose(pose),
 				m_location(none_container),
-				m_state(INVALID)
+				m_state(INVALID),
+				m_available(true),
+				m_faulty(false)
 			{
 			}
 			
@@ -46,6 +48,8 @@ namespace world {
 			std::string getState() const;
 			double getSize() const;
 			
+			void updatePose( geometry_msgs::Pose p) { m_pose = p; }
+			
 			void printPart();
 			
 		
@@ -57,6 +61,8 @@ namespace world {
 			geometry_msgs::Pose m_pose;
 			Container* m_location;
 			int m_state;
+			bool m_available;
+			bool m_faulty;
 	};
 	
 	

@@ -1,5 +1,5 @@
 #include <world/WorldState.hpp>
-
+#include <algorithm>
 
 
 namespace world {
@@ -21,7 +21,90 @@ namespace world {
 	}
 	
 	
-	bool WorldState::addPart( Part part, int bin ){
+	void WorldState::cb_updateParts(){
+		
+		// bins
+		for( int i = 0; i < m_bins.size(); ++i ){
+			
+			std::vector<SensorPart> s_parts = m_bins[i].getSensor()->getVisibleParts();
+			std::vector<Part> c_parts = m_bins[i].getParts();
+			
+			// every sensor part
+			for( int k = 0; k < s_parts.size(); ++k ){
+				
+				//find the part in the container
+				bool found = false;
+				for( int p = 0; p < c_parts.size(); ++p ){
+					if( c_parts[p].getName() == s_parts[k].name ){
+						
+						// update part pose
+						if( m_bins[i].updatePartPose( c_parts[p].getName(), s_parts[k].pose ) ){
+							ROS_INFO("Update %s pose", c_parts[p].getName().c_str());
+						}
+						else{
+							ROS_ERROR("Error trying to update %s pose!", c_parts[p].getName().c_str());
+						}
+						
+						found = true;
+					}
+				} 
+				
+				// add the part to the world and bin only if it does not exist in the world yet
+				if( !found && m_parts[s_parts[k].name][s_parts[k].type].expired() ){
+					
+					Part new_part( s_parts[k].name, s_parts[k].pose, &m_removed );
+					if( addNewPart( new_part, i+1 ) ){
+						ROS_INFO("Added the new part %s to the world in %s", s_parts[k].name.c_str(), m_bins[i].getName().c_str());
+					}
+					else{
+						ROS_ERROR("Error adding the new part %s to the world!", s_parts[k].name.c_str());
+					}
+				}
+			}
+		}
+		
+		
+		// box
+		if(m_boxes.size() > 0){
+			std::vector<SensorPart> s_parts = m_boxes[0]->getSensor()->getVisibleParts();
+			std::vector<Part> c_parts = m_boxes[0]->getParts();
+			
+			// every sensor part
+			for( int k = 0; k < s_parts.size(); ++k ){
+				
+				//find the part in the container
+				bool found = false;
+				for( int p = 0; p < c_parts.size(); ++p ){
+					if( c_parts[p].getName() == s_parts[k].name ){
+						
+						// update part pose
+						if( m_boxes[0]->updatePartPose( c_parts[p].getName(), s_parts[k].pose ) ){
+							ROS_INFO("Update %s pose", c_parts[p].getName().c_str());
+						}
+						else{
+							ROS_ERROR("Error trying to update %s pose!", c_parts[p].getName().c_str());
+						}
+						
+						found = true;
+					}
+				} 
+				
+		
+				if( !found ){
+					ROS_ERROR("Error updating %s from %s sensor, the part does not exist in the container!", s_parts[k].name.c_str(), m_boxes[0]->getName().c_str());
+				}
+			}
+		}
+		
+		// gripper
+		
+		
+		// only add new parts to the world in containers from sensors
+		
+		// update the poses of all visible PLACED parts
+	}
+	
+	bool WorldState::addNewPart( Part part, int bin ){
 		
 		ROS_INFO("Adding %s to bin %d.", part.getName().c_str(), bin);
 		int binnum = bin-1;
@@ -88,11 +171,11 @@ namespace world {
 		
 		
 	
-	bool WorldState::addSensor( Sensor* sensor ){
+	bool WorldState::addSensor( std::string sensor_name ){
 		
-		ROS_INFO("Adding sensor %s to the world.", sensor->getName().c_str());
-		std::unique_ptr<Sensor> s( sensor );
-		m_sensors[ sensor->getName() ] = std::move(s);
+		ROS_INFO("Adding sensor %s to the world.", sensor_name.c_str());
+		std::unique_ptr<Sensor> s( new LogicalCameraSensor(sensor_name) );
+		m_sensors[ sensor_name ] = std::move(s);
 		ROS_INFO("There are now %lu sensors.", m_sensors.size());
 		
 		return true;
@@ -100,14 +183,14 @@ namespace world {
 	
 	
 	
-	bool WorldState::removeSensor( std::string name ){
+	bool WorldState::removeSensor( std::string sensor_name ){
 	
-		if( m_sensors[name] != nullptr ){
-			ROS_INFO("Removing %s from the world.", name.c_str());
-			m_sensors[name] = nullptr;
+		if( m_sensors[sensor_name] != nullptr ){
+			ROS_INFO("Removing %s from the world.", sensor_name.c_str());
+			m_sensors[sensor_name] = nullptr;
 		}
 		else{
-			ROS_ERROR("Could not remove %s, it does not exist!", name.c_str());
+			ROS_ERROR("Could not remove %s, it does not exist!", sensor_name.c_str());
 			return false;
 		}
 
@@ -115,7 +198,35 @@ namespace world {
 	}	
 	
 	
-	
+	bool WorldState::addRobot( std::unique_ptr<Robot> robot ){
+		
+		if( m_robot == nullptr ){
+			ROS_INFO("Adding robot %s to the world.", robot->getName().c_str());
+			m_robot = std::move(robot);
+		}
+		else{
+			ROS_ERROR("Cannot add the robot, one already exists!");
+			return false;
+		}
+		
+		return true;
+	}
+			
+			
+	bool WorldState::removeRobot( std::string robot_name ){
+		
+		if( robot_name == m_robot->getName() ){
+			m_robot = nullptr;
+		}
+		else{
+			ROS_ERROR("Cannot remove the robot %s, it does not exist.", robot_name.c_str());
+			return false;
+		}
+		
+		return true;
+	}
+			
+			
 	bool WorldState::testFunction(){
 		
 		
@@ -135,9 +246,9 @@ namespace world {
 		Part p1("gear_part_12", pose, &m_removed);
 		Part p2("pulley_part_1", pose, &m_removed);
 		Part p3("disk_part_99", pose, &m_removed);
-		addPart(p1, 1);
-		addPart(p2, 1);
-		addPart(p3, 5);
+		addNewPart(p1, 1);
+		addNewPart(p2, 1);
+		addNewPart(p3, 5);
 		Box b1("BOX0");
 		addBox(b1);
 		ROS_INFO(" ");
@@ -146,24 +257,35 @@ namespace world {
 		
 		
 		// create sensors
-		std::unique_ptr<Sensor> s1 =  std::unique_ptr<Sensor>( new LogicalCameraSensor("logical_camera_1") );
-		std::unique_ptr<Sensor> s2 =  std::unique_ptr<Sensor>( new LogicalCameraSensor("logical_camera_2") );
-		std::unique_ptr<Sensor> s3 =  std::unique_ptr<Sensor>( new LogicalCameraSensor("logical_camera_3") );
-		std::unique_ptr<Sensor> s4 =  std::unique_ptr<Sensor>( new LogicalCameraSensor("logical_camera_4") );
-		std::unique_ptr<Sensor> s5 =  std::unique_ptr<Sensor>( new LogicalCameraSensor("logical_camera_5") );
-		std::unique_ptr<Sensor> s6 =  std::unique_ptr<Sensor>( new LogicalCameraSensor("logical_camera_6") );
-		m_bins[0].connectSensor( s1.get() );
-		m_bins[1].connectSensor( s2.get() );
-		m_bins[2].connectSensor( s3.get() );
-		m_bins[3].connectSensor( s4.get() );
-		m_bins[4].connectSensor( s5.get() );
-		m_boxes[0]->connectSensor( s6.get() );
-		m_sensors[s1->getName()] = std::move(s1);
-		m_sensors[s2->getName()] = std::move(s2);
-		m_sensors[s3->getName()] = std::move(s3);
-		m_sensors[s4->getName()] = std::move(s4);
-		m_sensors[s5->getName()] = std::move(s5);
-		m_sensors[s6->getName()] = std::move(s6);
+		//~ std::unique_ptr<Sensor> s1 =  std::unique_ptr<Sensor>( new LogicalCameraSensor("logical_camera_1") );
+		//~ std::unique_ptr<Sensor> s2 =  std::unique_ptr<Sensor>( new LogicalCameraSensor("logical_camera_2") );
+		//~ std::unique_ptr<Sensor> s3 =  std::unique_ptr<Sensor>( new LogicalCameraSensor("logical_camera_3") );
+		//~ std::unique_ptr<Sensor> s4 =  std::unique_ptr<Sensor>( new LogicalCameraSensor("logical_camera_4") );
+		//~ std::unique_ptr<Sensor> s5 =  std::unique_ptr<Sensor>( new LogicalCameraSensor("logical_camera_5") );
+		//~ std::unique_ptr<Sensor> s6 =  std::unique_ptr<Sensor>( new LogicalCameraSensor("logical_camera_6") );
+		addSensor("logical_camera_1");
+		addSensor("logical_camera_2");
+		addSensor("logical_camera_3");
+		addSensor("logical_camera_4");
+		addSensor("logical_camera_5");
+		addSensor("logical_camera_6");
+		m_bins[0].connectSensor( m_sensors["logical_camera_1"].get() );
+		m_bins[1].connectSensor( m_sensors["logical_camera_2"].get() );
+		m_bins[2].connectSensor( m_sensors["logical_camera_3"].get() );
+		m_bins[3].connectSensor( m_sensors["logical_camera_4"].get() );
+		m_bins[4].connectSensor( m_sensors["logical_camera_5"].get() );
+		m_boxes[0]->connectSensor( m_sensors["logical_camera_6"].get() );
+		
+		
+		// create graph
+		m_graph.initializeGraph();
+		
+		
+		// create robot
+		std::unique_ptr<Robot> r1 = std::unique_ptr<Robot>( new IIWA14Robot("iiwa14") );
+		addRobot( std::move(r1) );
+		m_robot->initialize(m_graph);
+		m_robot->printRobot();
 		
 		
 		// detect parts
@@ -197,6 +319,18 @@ namespace world {
 		// submit the box
 		removeBox();
 		
+		
+		// test state graph
+		std::vector< State > path;
+		if( m_graph.findPath("BOX", "BIN1", path) ){
+			ROS_INFO("Path found");
+			for(int i = 0; i < path.size(); ++i){
+				ROS_INFO("Pos %d: %s, %.2f %.2f ...", i+1, path[i].name.c_str(), path[i].joint_values[0], path[i].joint_values[1]);
+			}
+		}
+		
+		
+		return true;
 	}
 	
 	

@@ -25,7 +25,6 @@ namespace world {
 
 
 
-
 	void Gripper::addPart( std::shared_ptr<Part> part_ptr ){
 		
 		if( m_part == nullptr ){
