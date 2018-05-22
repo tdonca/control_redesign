@@ -14,7 +14,7 @@ namespace world {
 	typedef boost::graph_traits<Graph>::vertex_descriptor Vertex;
 	typedef boost::graph_traits<Graph>::vertex_iterator vertex_iter;
 	typedef boost::graph_traits<Graph>::adjacency_iterator adj_iter;
-	enum StateNum { BOX, REMOVE, ASIDE, FACEBIN1, FACEBIN2, FACEBIN3, FACEBIN4, FACEBIN5, BIN1, BIN2, BIN3, BIN4, BIN5, NUMSTATES };
+	enum StateNum { BOX, REMOVE, FACEBIN1, FACEBIN2, FACEBIN3, FACEBIN4, FACEBIN5, BIN1, BIN2, BIN3, BIN4, BIN5, NUMSTATES };
 	
 	class StateGraph {
 		
@@ -28,7 +28,7 @@ namespace world {
 			
 			bool findPath( std::string init, std::string goal, std::vector< State > & path );
 			
-			bool findState( std::string state_name, State state );
+			bool findState( std::string state_name, State & state );
 			
 			bool setStateJointValues( std::string state, std::vector<double> jv );
 			

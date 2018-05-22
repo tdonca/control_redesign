@@ -2,7 +2,7 @@
 #define WORLD_ROBOT_IIWA14
 
 #include <world/Robot.hpp>
-
+#include <moveit/move_group_interface/move_group_interface.h>
 
 namespace world {
 	
@@ -16,11 +16,12 @@ namespace world {
 			static const int IN_TRANSITION = 2;
 			
 			
-			IIWA14Robot( std::string name )
+			IIWA14Robot( std::string name, moveit::planning_interface::MoveGroupInterface & move_group )
 			:	m_name(name),
 				m_state(INVALID),
 				m_graph_state(),
-				m_joints(8)
+				m_joints(8),
+				m_move_group(move_group)
 				
 			{}
 			
@@ -45,6 +46,7 @@ namespace world {
 			int m_state;
 			std::string m_graph_state;
 			std::vector<double> m_joints;
+			moveit::planning_interface::MoveGroupInterface & m_move_group;
 		
 	};
 	

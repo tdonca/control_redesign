@@ -23,10 +23,6 @@ namespace world {
 			
 			virtual bool start() = 0;
 			
-			virtual void addPart( Part part ) = 0;
-			
-			virtual void removePart( std::string part_name ) = 0;
-			
 			virtual std::vector<SensorPart> getVisibleParts() = 0;
 			
 			virtual void printSensor() = 0;
@@ -41,7 +37,9 @@ namespace world {
 		
 		std::string name;
 		std::string type;
+		std::string id;
 		geometry_msgs::Pose pose;
+		ros::Time stamp;
 		
 		void printPart(){
 			double r, p, y;

@@ -1,5 +1,5 @@
-#ifndef WORLD_SENSOR_LOGICALCAMERA
-#define WORLD_SENSOR_LOGICALCAMERA
+#ifndef WORLD_SENSOR_QUALITYCONTROL
+#define WORLD_SENSOR_QUALITYCONTROL
 
 #include <world/Sensor.hpp>
 #include <world/Part.hpp>
@@ -10,11 +10,11 @@ namespace world{
 	
 	typedef std::map< std::string, std::pair<std::string, ros::Time> > TFMap;
 	
-	class LogicalCameraSensor: public Sensor {
+	class QualityControlSensor: public Sensor {
 		
 		public:
 			
-			LogicalCameraSensor( std::string name, tf2_ros::Buffer* tfBuf, TFMap & tf_list )
+			QualityControlSensor( std::string name, tf2_ros::Buffer* tfBuf, TFMap & tf_list )
 			:	m_name(name),
 				m_parts(),
 				m_tf_list(tf_list),
@@ -33,7 +33,7 @@ namespace world{
 			
 			virtual void printSensor();
 			
-			virtual ~LogicalCameraSensor() {};
+			virtual ~QualityControlSensor() {};
 		
 		
 		private:

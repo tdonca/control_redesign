@@ -17,7 +17,6 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <world/WorldState.hpp>
 
-
 using namespace world;
 
 //~ bool testPart();
@@ -31,10 +30,16 @@ using namespace world;
 
 int main( int argc, char* argv[] ){
 	
-	//testPart();
+	ros::init(argc, argv, "test_node");
+	ros::NodeHandle node;
+	ros::AsyncSpinner spinner(4);
+	spinner.start();
+	
 	
 	WorldState ws;
-	ws.testFunction();
+	//ws.testFunction();
+	
+	ros::waitForShutdown();
 	return 0;
 }
 

@@ -72,7 +72,7 @@ add_service_files(
 add_action_files(
   DIRECTORY action
   FILES
-  #~ FillOrder.action
+  FillShipment.action
   #~ ExecuteTransition.action
   #~ ExecuteGripper.action
 )
@@ -83,6 +83,7 @@ generate_messages(
   std_msgs
   geometry_msgs
   actionlib_msgs
+  osrf_gear
 )
 
 ################################################
@@ -120,14 +121,14 @@ link_directories(${catkin_LIBRARY_DIRS})
 ## Node Executables ##
 ######################
 
-### Test Node ###
+### World State Node ###
 
 # Add executable file
-add_executable( test_server src/world/test_server.cpp )
-add_dependencies( test_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} )
-target_link_libraries( test_server ${catkin_LIBRARIES} )
+add_executable( world_server src/world/world_server.cpp )
+add_dependencies( world_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} )
+target_link_libraries( world_server ${catkin_LIBRARIES} )
 # Link other class files
-target_sources( test_server 
+target_sources( world_server 
 	PUBLIC 
 		src/world/WorldState.cpp 
 		src/world/Part.cpp 
@@ -135,16 +136,52 @@ target_sources( test_server
 		src/world/Box.cpp 
 		src/world/Gripper.cpp 
 		src/world/LogicalCameraSensor.cpp 
+		src/world/QualityControlSensor.cpp
 		src/world/IIWA14Robot.cpp 
-		src/world/StateGraph.cpp
-		
+		src/world/StateGraph.cpp	
+)
+
+
+
+### Client Test Node ###
+
+# Add executable file
+add_executable( client_test src/client/client_test.cpp )
+add_dependencies( client_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} )
+target_link_libraries( client_test ${catkin_LIBRARIES} )
+# Link other class files
+target_sources( client_test 
+	PUBLIC 
+		src/client/WorldStateClient.cpp	
 )
 
 
 
 
+### Order Scheduler Node ###
+
+# Add executable file
+add_executable( order_server src/order/order_server.cpp )
+add_dependencies( order_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} )
+target_link_libraries( order_server ${catkin_LIBRARIES} )
+# Link other class files
+target_sources( order_server 
+	PUBLIC 
+		src/order/OrderScheduler.cpp
+)
 
 
 
+### Task Planner Node ###
+
+# Add executable file
+add_executable( task_server src/task/task_server.cpp )
+add_dependencies( task_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} )
+target_link_libraries( task_server ${catkin_LIBRARIES} )
+# Link other class files
+target_sources( task_server 
+	PUBLIC 
+		src/task/TaskPlanner.cpp
+)
 
 

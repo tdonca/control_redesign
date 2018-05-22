@@ -11,6 +11,7 @@ namespace world {
 	
 	class Container;
 	std::string getTypeFromName( std::string name );
+	std::string getIDFromName( std::string name );
 
 	class Part {
 		
@@ -25,6 +26,7 @@ namespace world {
 			Part( std::string name, geometry_msgs::Pose pose, Container * none_container )
 			:	m_name(name),
 				m_type( getTypeFromName(name) ),
+				m_id( getIDFromName(name) ),
 				m_size( getSize() ),
 				m_pose(pose),
 				m_location(none_container),
@@ -47,8 +49,11 @@ namespace world {
 			const Container* getLocation() const { return m_location; }
 			std::string getState() const;
 			double getSize() const;
+			bool isAvailable() const { return m_available; }
+			bool isFaulty() const { return m_faulty; }
 			
 			void updatePose( geometry_msgs::Pose p) { m_pose = p; }
+			void markFaulty() { m_faulty = true; }
 			
 			void printPart();
 			
@@ -57,6 +62,7 @@ namespace world {
 			
 			std::string m_name;
 			std::string m_type;
+			std::string m_id;
 			double m_size;
 			geometry_msgs::Pose m_pose;
 			Container* m_location;

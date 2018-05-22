@@ -63,6 +63,9 @@ namespace world {
 		ROS_INFO("Position: %.3f, %.3f, %.3f", getPose().position.x, getPose().position.y, getPose().position.z);
 		ROS_INFO("Orientation: %.3f, %.3f, %.3f, %.3f", getPose().orientation.x, getPose().orientation.y, getPose().orientation.z, getPose().orientation.w);
 		ROS_INFO("RollPitchYaw: %.3f, %.3f, %.3f", r, p, y);
+		if( m_faulty ){
+			ROS_INFO("Faulty: YES!");
+		}
 		ROS_INFO(" ");
 	}
 	

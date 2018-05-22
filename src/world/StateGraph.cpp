@@ -17,10 +17,6 @@ namespace world {
 		m_graph[StateNum::REMOVE].state_num = StateNum::REMOVE;
 		m_graph[StateNum::REMOVE].at_container = false;
 		
-		m_graph[StateNum::ASIDE].name = "ASIDE";
-		m_graph[StateNum::ASIDE].state_num = StateNum::ASIDE;
-		m_graph[StateNum::ASIDE].at_container = false; // maybe true later?
-		
 		m_graph[StateNum::FACEBIN1].name = "FACEBIN1";
 		m_graph[StateNum::FACEBIN1].state_num = StateNum::FACEBIN1;
 		m_graph[StateNum::FACEBIN1].at_container = false;
@@ -125,7 +121,7 @@ namespace world {
 
 
 
-	bool StateGraph::findState( std::string state_name, State state ){
+	bool StateGraph::findState( std::string state_name, State & state ){
 		
 		// iterate through vertices and find the state
 		vertex_iter vi, vi_end;
@@ -166,9 +162,6 @@ namespace world {
 		}
 		else if( state == "REMOVE" ){
 			return StateNum::REMOVE;
-		}
-		else if( state == "ASIDE" ){
-			return StateNum::ASIDE;
 		}
 		else if( state == "FACEBIN1" ){
 			return StateNum::FACEBIN1;

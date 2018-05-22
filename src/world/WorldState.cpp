@@ -4,25 +4,68 @@
 
 namespace world {
 	
-	std::string getTypeFromName( std::string name );
-	std::vector<std::string> split(const char *str, char c = '_');
+	
 	
 		
 	bool WorldState::initializeWorld(){
 		
-		// Bins
+		// topics
+		m_tf_sub = m_node.subscribe( "tf", 100, &WorldState::cb_tfList, this);
+		ros::Duration(0.5).sleep();
 		
-		// Robot
+		// timers
+		m_update_t = m_node.createTimer( ros::Duration(2.0), &WorldState::cb_updateParts, this );
 		
 		// Boxes
+		Box b1("BOX0");
+		addBox(b1);
 		
+		
+		// DEBUG -- REMOVE!!
+			Part part("gasket_part_63", geometry_msgs::Pose(), &m_removed);
+			addNewPartToBox(part);
+		// DEBUNG -- REMOVE!!
+		
+		
+		// Sensors
+		addCameraSensor("logical_camera_1");
+		addCameraSensor("logical_camera_2");
+		addCameraSensor("logical_camera_3");
+		addCameraSensor("logical_camera_4");
+		addCameraSensor("logical_camera_5");
+		addCameraSensor("logical_camera_6");
+		addQualitySensor("quality_control_sensor_1");
+		m_bins[0].connectSensor( m_sensors["logical_camera_1"].get() );
+		m_bins[1].connectSensor( m_sensors["logical_camera_2"].get() );
+		m_bins[2].connectSensor( m_sensors["logical_camera_3"].get() );
+		m_bins[3].connectSensor( m_sensors["logical_camera_4"].get() );
+		m_bins[4].connectSensor( m_sensors["logical_camera_5"].get() );
+		m_boxes[0]->connectSensor( m_sensors["logical_camera_6"].get() );
+		m_sensors["logical_camera_1"]->start();
+		m_sensors["logical_camera_2"]->start();
+		m_sensors["logical_camera_3"]->start();
+		m_sensors["logical_camera_4"]->start();
+		m_sensors["logical_camera_5"]->start();
+		m_sensors["logical_camera_6"]->start();
+		m_sensors["quality_control_sensor_1"]->start();
+		
+		// Robot
+		m_graph.initializeGraph();
+		std::unique_ptr<Robot> r1 = std::unique_ptr<Robot>( new IIWA14Robot("iiwa14", m_move_group) );
+		addRobot( std::move(r1) );
+		m_robot->initialize(m_graph);
+		
+		// services
+		
+	
+		
+			
 		return true;
-		
 	}
 	
 	
-	void WorldState::cb_updateParts(){
-		
+	void WorldState::cb_updateParts( const ros::TimerEvent & t ){
+		ROS_INFO("+++++World Update+++++");
 		// bins
 		for( int i = 0; i < m_bins.size(); ++i ){
 			
@@ -39,7 +82,7 @@ namespace world {
 						
 						// update part pose
 						if( m_bins[i].updatePartPose( c_parts[p].getName(), s_parts[k].pose ) ){
-							ROS_INFO("Update %s pose", c_parts[p].getName().c_str());
+							//~ ROS_INFO("Update %s pose", c_parts[p].getName().c_str());
 						}
 						else{
 							ROS_ERROR("Error trying to update %s pose!", c_parts[p].getName().c_str());
@@ -79,7 +122,7 @@ namespace world {
 						
 						// update part pose
 						if( m_boxes[0]->updatePartPose( c_parts[p].getName(), s_parts[k].pose ) ){
-							ROS_INFO("Update %s pose", c_parts[p].getName().c_str());
+							//~ ROS_INFO("Update %s pose", c_parts[p].getName().c_str());
 						}
 						else{
 							ROS_ERROR("Error trying to update %s pose!", c_parts[p].getName().c_str());
@@ -88,20 +131,54 @@ namespace world {
 						found = true;
 					}
 				} 
-				
 		
 				if( !found ){
 					ROS_ERROR("Error updating %s from %s sensor, the part does not exist in the container!", s_parts[k].name.c_str(), m_boxes[0]->getName().c_str());
 				}
 			}
+			
+			
+			
+			// check for faulty parts
+			std::vector<SensorPart> faulty_parts = m_sensors["quality_control_sensor_1"]->getVisibleParts();
+			
+			
+			
+			for( int i = 0; i < faulty_parts.size(); ++i ){
+				ROS_ERROR("Faulty Part Detected: %s!", faulty_parts[i].name.c_str());
+				bool found = false;
+				
+				// only mark the fauly part once
+				if( std::find(m_faulty_parts.begin(), m_faulty_parts.end(), faulty_parts[i].id) != m_faulty_parts.end() ){
+					continue;
+				}
+				
+				// v MOVE TO A SEPARATE FUNCTION --------------------
+				// find matching part id
+				for( WorldPartsMap::iterator it = m_parts.begin(); it != m_parts.end(); ++it ){
+					for( std::unordered_map<std::string, std::weak_ptr<Part> >::iterator it2 = it->second.begin(); it2 != it->second.end(); ++it2 ){
+						
+						std::string tmp_name = it2->first;
+						if( getIDFromName(tmp_name) == faulty_parts[i].id ){
+							// mark faulty
+							it2->second.lock()->markFaulty();
+							ROS_ERROR("Marked %s as faulty", it2->first.c_str());
+							m_faulty_parts.push_back(getIDFromName(tmp_name)); 
+							found = true;
+							break;
+						}
+					}
+					if(found){
+						break;
+					}
+				}
+				// ^ MOVE TO A SEPARATE FUNCTION ________________
+				
+				if(!found){
+					ROS_ERROR("Could not mark %s faulty !!!", faulty_parts[i].name.c_str());
+				}
+			}	
 		}
-		
-		// gripper
-		
-		
-		// only add new parts to the world in containers from sensors
-		
-		// update the poses of all visible PLACED parts
 	}
 	
 	bool WorldState::addNewPart( Part part, int bin ){
@@ -126,7 +203,29 @@ namespace world {
 		return true;
 	}
 			
+	
+	bool WorldState::addNewPartToBox( Part part ){
+		
+		if(m_boxes.size() > 0){
+			// only add part if it doesn't already exist
+			if( m_parts[part.getType()][part.getName()].expired() ){
+				
+				// add part shared_ptr to bin
+				std::shared_ptr<Part> part_ptr = std::make_shared<Part>(part);
+				m_boxes[0]->addPart(part_ptr);
+				// add part weak_ptr to world
+				m_parts[part.getType()][part.getName()] = part_ptr;
+			}
+			else{
+				ROS_ERROR("Could not add %s to the world, it already exists!", part.getName().c_str());
+				return false;
+			}
 			
+		}
+		else{
+			ROS_ERROR("Cannot add part to box, there are no boxes in the world!");
+		}
+	}		
 			
 	bool WorldState::removePart( std::string name ){
 		
@@ -171,10 +270,20 @@ namespace world {
 		
 		
 	
-	bool WorldState::addSensor( std::string sensor_name ){
+	bool WorldState::addCameraSensor( std::string sensor_name ){
 		
 		ROS_INFO("Adding sensor %s to the world.", sensor_name.c_str());
-		std::unique_ptr<Sensor> s( new LogicalCameraSensor(sensor_name) );
+		std::unique_ptr<Sensor> s( new LogicalCameraSensor(sensor_name, &m_tfBuf, m_tf_list) );
+		m_sensors[ sensor_name ] = std::move(s);
+		ROS_INFO("There are now %lu sensors.", m_sensors.size());
+		
+		return true;
+	}
+	
+	bool WorldState::addQualitySensor( std::string sensor_name ){
+		
+		ROS_INFO("Adding sensor %s to the world.", sensor_name.c_str());
+		std::unique_ptr<Sensor> s( new QualityControlSensor(sensor_name, &m_tfBuf, m_tf_list) );
 		m_sensors[ sensor_name ] = std::move(s);
 		ROS_INFO("There are now %lu sensors.", m_sensors.size());
 		
@@ -230,104 +339,28 @@ namespace world {
 	bool WorldState::testFunction(){
 		
 		
-		// create pose
-		ROS_INFO("Create three parts");
-		geometry_msgs::Pose pose;
-		pose.position.x = 0.5;
-		pose.position.y = 0.5;
-		pose.position.z = 0.5;
-		pose.orientation.x = 0.0;
-		pose.orientation.y = 0.0;
-		pose.orientation.z = 0.0;
-		pose.orientation.w = 1.0;
+		//~ // move parts around
+		//~ ROS_INFO("Move the parts around");
+		//~ m_gripper.addPart( m_bins[0].removePart("gear_part_12") );
+		//~ m_bins[0].getSensor()->removePart("gear_part_12");
+		//~ m_bins[0].printContainer();
+		//~ m_gripper.printContainer();
+		//~ m_boxes[0]->addPart( m_gripper.removePart("gear_part_12") );
+		//~ m_gripper.printContainer();
+		//~ m_boxes[0]->printContainer();
+		//~ m_gripper.addPart( m_boxes[0]->removePart("gear_part_12") );
+		//~ m_bins[2].addPart( m_gripper.removePart("gear_part_12") );
+		//~ m_bins[2].getSensor()->addPart(p1);
+		//~ m_bins[0].printContainer();
+		//~ m_bins[1].printContainer();
+		//~ m_bins[2].printContainer();
+		//~ m_bins[3].printContainer();
+		//~ m_bins[4].printContainer();
+		//~ m_gripper.printContainer();
 		
 		
-		// create parts
-		Part p1("gear_part_12", pose, &m_removed);
-		Part p2("pulley_part_1", pose, &m_removed);
-		Part p3("disk_part_99", pose, &m_removed);
-		addNewPart(p1, 1);
-		addNewPart(p2, 1);
-		addNewPart(p3, 5);
-		Box b1("BOX0");
-		addBox(b1);
-		ROS_INFO(" ");
-		m_bins[0].printContainer();
-		m_bins[4].printContainer();
-		
-		
-		// create sensors
-		//~ std::unique_ptr<Sensor> s1 =  std::unique_ptr<Sensor>( new LogicalCameraSensor("logical_camera_1") );
-		//~ std::unique_ptr<Sensor> s2 =  std::unique_ptr<Sensor>( new LogicalCameraSensor("logical_camera_2") );
-		//~ std::unique_ptr<Sensor> s3 =  std::unique_ptr<Sensor>( new LogicalCameraSensor("logical_camera_3") );
-		//~ std::unique_ptr<Sensor> s4 =  std::unique_ptr<Sensor>( new LogicalCameraSensor("logical_camera_4") );
-		//~ std::unique_ptr<Sensor> s5 =  std::unique_ptr<Sensor>( new LogicalCameraSensor("logical_camera_5") );
-		//~ std::unique_ptr<Sensor> s6 =  std::unique_ptr<Sensor>( new LogicalCameraSensor("logical_camera_6") );
-		addSensor("logical_camera_1");
-		addSensor("logical_camera_2");
-		addSensor("logical_camera_3");
-		addSensor("logical_camera_4");
-		addSensor("logical_camera_5");
-		addSensor("logical_camera_6");
-		m_bins[0].connectSensor( m_sensors["logical_camera_1"].get() );
-		m_bins[1].connectSensor( m_sensors["logical_camera_2"].get() );
-		m_bins[2].connectSensor( m_sensors["logical_camera_3"].get() );
-		m_bins[3].connectSensor( m_sensors["logical_camera_4"].get() );
-		m_bins[4].connectSensor( m_sensors["logical_camera_5"].get() );
-		m_boxes[0]->connectSensor( m_sensors["logical_camera_6"].get() );
-		
-		
-		// create graph
-		m_graph.initializeGraph();
-		
-		
-		// create robot
-		std::unique_ptr<Robot> r1 = std::unique_ptr<Robot>( new IIWA14Robot("iiwa14") );
-		addRobot( std::move(r1) );
-		m_robot->initialize(m_graph);
-		m_robot->printRobot();
-		
-		
-		// detect parts
-		m_bins[0].getSensor()->addPart(p1); // sensor1
-		m_bins[0].getSensor()->addPart(p2); // sensor1
-		m_bins[4].getSensor()->addPart(p3); // sensor5
-		for( int i = 0; i < m_bins.size(); ++i ){
-			m_bins[i].getSensor()->printSensor();
-		}
-		m_boxes[0]->getSensor()->printSensor();
-		
-		
-		// move parts around
-		ROS_INFO("Move the parts around");
-		m_gripper.addPart( m_bins[0].removePart("gear_part_12") );
-		m_bins[0].printContainer();
-		m_gripper.printContainer();
-		m_boxes[0]->addPart( m_gripper.removePart("gear_part_12") );
-		m_gripper.printContainer();
-		m_boxes[0]->printContainer();
-		m_gripper.addPart( m_boxes[0]->removePart("gear_part_12") );
-		m_bins[2].addPart( m_gripper.removePart("gear_part_12") );
-		m_bins[0].printContainer();
-		m_bins[1].printContainer();
-		m_bins[2].printContainer();
-		m_bins[3].printContainer();
-		m_bins[4].printContainer();
-		m_gripper.printContainer();
-		
-		
-		// submit the box
-		removeBox();
-		
-		
-		// test state graph
-		std::vector< State > path;
-		if( m_graph.findPath("BOX", "BIN1", path) ){
-			ROS_INFO("Path found");
-			for(int i = 0; i < path.size(); ++i){
-				ROS_INFO("Pos %d: %s, %.2f %.2f ...", i+1, path[i].name.c_str(), path[i].joint_values[0], path[i].joint_values[1]);
-			}
-		}
+		//~ // submit the box
+		//~ removeBox();
 		
 		
 		return true;
@@ -336,38 +369,31 @@ namespace world {
 	
 	
 	
-			
-			
-	std::string getTypeFromName( std::string name ){
 		
-		std::vector<std::string> result = split( name.c_str() ); 
-		result.pop_back(); // remove ID number
+	void WorldState::cb_tfList( const tf2_msgs::TFMessage::ConstPtr & tf_list ){
 		
-		std::string type = "";
-		for( int i = 0; i < result.size(); ++i ){
-			type += result[i] + "_";
+		// update internal list of TF frame names
+		std::string pname;
+		for( int i = 0; i < tf_list->transforms.size(); ++i ){
+			pname = tf_list->transforms[i].child_frame_id;
+			m_tf_list[pname].first = pname;
+			m_tf_list[pname].second = tf_list->transforms[i].header.stamp;
 		}
-		type.pop_back(); // remove trailing "_"
 		
-		return type;
+		// remove old frame names
+		ros::Time now = ros::Time::now();
+		for( TFMap::iterator it = m_tf_list.begin(); it != m_tf_list.end(); ++it ){
+			if( now - it->second.second > ros::Duration(0.2) ){
+				ROS_ERROR("Removed %s", it->first.c_str());
+				m_tf_list.erase( it->first );
+			}
+		}
+		
 	}
+
+			
+			
 	
-	
-	std::vector<std::string> split(const char *str, char c){
-    
-		std::vector<std::string> result;
-		do
-		{
-			const char *begin = str;
-
-			while(*str != c && *str)
-				str++;
-
-			result.push_back(std::string(begin, str));
-		} while (0 != *str++);
-
-		return result;
-	}	
 
 
 }

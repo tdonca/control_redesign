@@ -53,18 +53,16 @@ namespace world {
 			ROS_INFO("Initializing robot to start position (IMPLEMENT!).");
 			m_state = IN_TRANSITION;
 			m_graph_state = "FACEBIN2";
-			//~ // wait for collision scene to load
-			//~ ros::Duration(1.0).sleep();
-			//~ m_move_group.setJointValueTarget( starting.joint_values );
-			//~ moveit::planning_interface::MoveGroupInterface::Plan plan;
-			//~ m_move_group.plan(plan);
-			//~ m_move_group.execute(plan);
+			// wait for collision scene to load
+			ros::Duration(0.5).sleep();
+			m_move_group.setJointValueTarget( starting.joint_values );
+			moveit::planning_interface::MoveGroupInterface::Plan plan;
+			m_move_group.plan(plan);
+			m_move_group.execute(plan);
 		}
 		else{
 			ROS_ERROR("Graph error at robot setup!");
 		}
-		
-		
 		
 		return true;
 	}

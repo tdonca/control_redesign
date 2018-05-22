@@ -6,7 +6,10 @@
 	  <arg     if="$(arg debug)" name="launch_prefix" value="gdb --ex run --args" />
 	  
 	  <remap from="joint_states" to="ariac/joint_states" />
+	  
+	  <param name="/use_sim_time" value="true" />
+	 
 	
-	<node name="test_server_node"   pkg="control_redesign"   type="test_server"   output="screen"   launch-prefix="$(arg launch_prefix)" />
+	<node name="task_server_node"   pkg="control_redesign"   type="task_server"   output="screen"   launch-prefix="$(arg launch_prefix)" />
 
 </launch>

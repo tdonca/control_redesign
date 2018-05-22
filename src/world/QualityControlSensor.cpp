@@ -1,5 +1,5 @@
 
-#include <world/LogicalCameraSensor.hpp>
+#include <world/QualityControlSensor.hpp>
 #include <geometry_msgs/TransformStamped.h>
 
 namespace world {
@@ -12,16 +12,16 @@ namespace world {
 	void transformToPose( const geometry_msgs::Transform & t, geometry_msgs::Pose & p );
 	
 	
-	bool LogicalCameraSensor::start(){
+	bool QualityControlSensor::start(){
 		
 		// setup to detect parts
-		m_update_t = m_node.createTimer( ros::Duration(1.0), &LogicalCameraSensor::cb_updateParts, this );
+		m_update_t = m_node.createTimer( ros::Duration(1.0), &QualityControlSensor::cb_updateParts, this );
 		
 		return true;
 	}
 		
 			
-	std::vector<SensorPart> LogicalCameraSensor::getVisibleParts(){
+	std::vector<SensorPart> QualityControlSensor::getVisibleParts(){
 		
 		return sensorMapToVector( m_parts );
 	}
@@ -29,8 +29,8 @@ namespace world {
 	
 	
 		
-	void LogicalCameraSensor::cb_updateParts( const ros::TimerEvent & t ){
-		ROS_INFO(".......%s Update.......", getName().c_str());
+	void QualityControlSensor::cb_updateParts( const ros::TimerEvent & t ){
+		ROS_INFO("......%s Update.......", getName().c_str());
 		// copy tf list
 		std::vector<std::string> tf_names;
 		TFMapToVec( m_tf_list, tf_names );
@@ -43,7 +43,7 @@ namespace world {
 		// select only tf from this camera
 		for( int i = 0; i < tf_names.size(); ++i ){
 			if( tf_names[i].find( getName() ) != std::string::npos ){ // tf from this camera
-				if( tf_names[i].find( "part" ) != std::string::npos ){ // tf of a part
+				if( tf_names[i].find( "model" ) != std::string::npos ){ // tf of a part
 					
 					// find part
 					try {
@@ -62,7 +62,7 @@ namespace world {
 					std::string name = getNameFromFrame( getName(), tf_names[i] );
 					new_part.name = name;
 					// type
-					new_part.type = getTypeFromName( name );
+					new_part.type = getTypeFromName( name ); 
 					// id
 					new_part.id = getIDFromName( name ); 
 					// pose
@@ -84,7 +84,7 @@ namespace world {
 			}
 		}
 		for( int i = 0; i < old_parts.size(); ++i ){
-			ROS_ERROR("Camera erased an old part %s %f.", old_parts[i].c_str(), m_parts[old_parts[i]].stamp.toSec());
+			ROS_ERROR("Quality Sensor erased an old part %s %f.", old_parts[i].c_str(), m_parts[old_parts[i]].stamp.toSec());
 			removePart(old_parts[i]);
 		}
 		
@@ -93,18 +93,18 @@ namespace world {
 	}
 
 
-	void LogicalCameraSensor::addPart( SensorPart part ){
+	void QualityControlSensor::addPart( SensorPart part ){
 		
 		m_parts[part.name] = part;
 	}
 	
-	void LogicalCameraSensor::removePart( std::string part_name ){
+	void QualityControlSensor::removePart( std::string part_name ){
 		
 		m_parts.erase(part_name);
 	}
 	
 	
-	void LogicalCameraSensor::printSensor(){
+	void QualityControlSensor::printSensor(){
 		
 		std::vector< SensorPart > parts = getVisibleParts();
 		ROS_INFO("--------%s Info: %lu parts----------", getName().c_str(), parts.size());
@@ -118,77 +118,72 @@ namespace world {
 	
 	
 	
-	void TFMapToVec( const TFMap & m, std::vector<std::string> & v ){
-		for( TFMap::const_iterator it = m.begin(); it != m.end(); ++it ){
-			v.push_back( it->second.first );
-		}
-	}
+	//~ void TFMapToVec( const TFMap & m, std::vector<std::string> & v ){
+		//~ for( TFMap::const_iterator it = m.begin(); it != m.end(); ++it ){
+			//~ v.push_back( it->second.first );
+		//~ }
+	//~ }
 
-	void transformToPose( const geometry_msgs::Transform & t, geometry_msgs::Pose & p ){
-		p.position.x = t.translation.x;
-		p.position.y = t.translation.y;
-		p.position.z = t.translation.z;
+	//~ void transformToPose( const geometry_msgs::Transform & t, geometry_msgs::Pose & p ){
+		//~ p.position.x = t.translation.x;
+		//~ p.position.y = t.translation.y;
+		//~ p.position.z = t.translation.z;
 		
-		p.orientation.x = t.rotation.x;
-		p.orientation.y = t.rotation.y;
-		p.orientation.z = t.rotation.z;
-		p.orientation.w = t.rotation.w;
-	}
+		//~ p.orientation.x = t.rotation.x;
+		//~ p.orientation.y = t.rotation.y;
+		//~ p.orientation.z = t.rotation.z;
+		//~ p.orientation.w = t.rotation.w;
+	//~ }
 	
 	
 	
-	std::vector<std::string> split(const char *str, char c){
+	//~ std::vector<std::string> split(const char *str, char c){
     
-		std::vector<std::string> result;
-		do
-		{
-			const char *begin = str;
+		//~ std::vector<std::string> result;
+		//~ do
+		//~ {
+			//~ const char *begin = str;
 
-			while(*str != c && *str)
-				str++;
+			//~ while(*str != c && *str)
+				//~ str++;
 
-			result.push_back(std::string(begin, str));
-		} while (0 != *str++);
+			//~ result.push_back(std::string(begin, str));
+		//~ } while (0 != *str++);
 
-		return result;
-	}	
+		//~ return result;
+	//~ }	
 	
 	
-	std::string getTypeFromName( std::string name ){
+	//~ std::string getTypeFromName( std::string name ){
 		
-		std::vector<std::string> result = split( name.c_str() ); 
-		result.pop_back(); // remove ID number
+		//~ std::vector<std::string> result = split( name.c_str() ); 
+		//~ result.pop_back(); // remove ID number
 		
-		std::string type = "";
-		for( int i = 0; i < result.size(); ++i ){
-			type += result[i] + "_";
-		}
-		type.pop_back(); // remove trailing "_"
+		//~ std::string type = "";
+		//~ for( int i = 0; i < result.size(); ++i ){
+			//~ type += result[i] + "_";
+		//~ }
+		//~ type.pop_back(); // remove trailing "_"
 		
-		return type;
-	}
+		//~ return type;
+	//~ }
 	
 	
-	std::string getNameFromFrame( std::string camera_name, std::string frame_name ){
+	//~ std::string getNameFromFrame( std::string camera_name, std::string frame_name ){
 		
-		std::vector<std::string> result = split( frame_name.substr( camera_name.size() + 1 ).c_str() ); // remove "logical_camera_1" and "_"
-		result.pop_back(); // remove "frame" 
+		//~ std::vector<std::string> result = split( frame_name.substr( camera_name.size() + 1 ).c_str() ); // remove "logical_camera_1" and "_"
+		//~ result.pop_back(); // remove "frame" 
 		
-		std::string name = "";
-		for( int i = 0; i < result.size(); ++i ){
-			name += result[i] + "_";
-		}
-		name.pop_back(); // remove trailing "_"
+		//~ std::string name = "";
+		//~ for( int i = 0; i < result.size(); ++i ){
+			//~ name += result[i] + "_";
+		//~ }
+		//~ name.pop_back(); // remove trailing "_"
 		
-		return name;
+		//~ return name;
 		
-	}
+	//~ }
 	
-	std::string getIDFromName( std::string name ){
-		
-		std::vector<std::string> result = split( name.c_str() );
-		return result.back();
-	}
 	
 		
 		
