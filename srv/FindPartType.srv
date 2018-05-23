@@ -1,0 +1,14 @@
+
+# Find an *available* specific part of a given type
+
+string type
+
+---
+
+bool success
+string message
+
+string name
+string type
+string id
+geometry_msgs/Pose current_pose

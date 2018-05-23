@@ -21,10 +21,10 @@ namespace world {
 		addBox(b1);
 		
 		
-		// DEBUG -- REMOVE!!
-			Part part("gasket_part_63", geometry_msgs::Pose(), &m_removed);
-			addNewPartToBox(part);
-		// DEBUNG -- REMOVE!!
+		//~ // DEBUG -- REMOVE!!
+			//~ Part part("gasket_part_63", geometry_msgs::Pose(), &m_removed);
+			//~ addNewPartToBox(part);
+		//~ // DEBUNG -- REMOVE!!
 		
 		
 		// Sensors
@@ -56,8 +56,8 @@ namespace world {
 		m_robot->initialize(m_graph);
 		
 		// services
-		
-	
+		m_find_part_type_srv = m_node.advertiseService( "find_part_type", &WorldState::sv_findPartType, this );
+		m_release_part_srv = m_node.advertiseService( "release_part", &WorldState::sv_releasePart, this );
 		
 			
 		return true;
@@ -337,32 +337,6 @@ namespace world {
 			
 			
 	bool WorldState::testFunction(){
-		
-		
-		//~ // move parts around
-		//~ ROS_INFO("Move the parts around");
-		//~ m_gripper.addPart( m_bins[0].removePart("gear_part_12") );
-		//~ m_bins[0].getSensor()->removePart("gear_part_12");
-		//~ m_bins[0].printContainer();
-		//~ m_gripper.printContainer();
-		//~ m_boxes[0]->addPart( m_gripper.removePart("gear_part_12") );
-		//~ m_gripper.printContainer();
-		//~ m_boxes[0]->printContainer();
-		//~ m_gripper.addPart( m_boxes[0]->removePart("gear_part_12") );
-		//~ m_bins[2].addPart( m_gripper.removePart("gear_part_12") );
-		//~ m_bins[2].getSensor()->addPart(p1);
-		//~ m_bins[0].printContainer();
-		//~ m_bins[1].printContainer();
-		//~ m_bins[2].printContainer();
-		//~ m_bins[3].printContainer();
-		//~ m_bins[4].printContainer();
-		//~ m_gripper.printContainer();
-		
-		
-		//~ // submit the box
-		//~ removeBox();
-		
-		
 		return true;
 	}
 	
@@ -391,9 +365,53 @@ namespace world {
 		
 	}
 
+		
+	bool WorldState::sv_findPartType(control_redesign::FindPartType::Request & req, control_redesign::FindPartType::Response & rsp ){
+		
+		if( req.type != "gear_part" && req.type != "gasket_part" && req.type != "disk_part" && req.type != "pulley_part" && req.type != "piston_rod_part" ){
+			rsp.success = false;
+			rsp.message = "Did not provide a valid part type";
+			return true;
+		}
+		else{
 			
+			for( std::unordered_map<std::string, std::weak_ptr<Part> >::iterator it = m_parts[req.type].begin(); it != m_parts[req.type].end(); ++it ){
+				
+				std::shared_ptr<Part> p = it->second.lock();
+				if( p->isAvailable() && !p->isFaulty() ){
+					rsp.name = p->getName();
+					rsp.type = p->getType();
+					rsp.id = getIDFromName(rsp.name);
+					rsp.current_pose = p->getPose();
+					ROS_INFO("Marking %s to be used in the next shipment.", rsp.name.c_str());
+					p->markUsed();
+					rsp.success = true;
+					rsp.message = "Found the part: " + rsp.name;
+					return true;
+				}
+			}
+			
+			rsp.success = false;
+			rsp.message = "could not find any avilable " + req.type + " type";
+			return true;
+		}
+	}
 			
 	
-
+	bool WorldState::sv_releasePart( control_redesign::ReleasePart::Request & req, control_redesign::ReleasePart::Response & rsp ){
+		
+		std::string type = getTypeFromName(req.name);
+		if( !m_parts[type][req.name].expired() ){
+			m_parts[type][req.name].lock()->markAvailable();
+			rsp.success = true;
+			return true;
+		}
+		else{
+			rsp.success = false;
+			rsp.message = "Could not find the part: " + req.name;
+			return true;	
+		}
+		
+	}
 
 }

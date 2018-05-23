@@ -16,7 +16,22 @@ int main( int argc, char* argv[] ){
 	WorldStateClient ws_client;
 	
 	// test below
-	
+	PlannerPart p;
+	if( ws_client.getPartType("gear_part", p) ){
+		p.printPart();
+	}
+	if( ws_client.getPartType("gasket_part", p) ){
+		p.printPart();
+	}
+	if( ws_client.getPartType("piston_rod_part", p) ){
+		p.printPart();
+	}
+	if( ws_client.getPartType("pulley_part", p) ){
+		p.printPart();
+	}
+	if( ws_client.getPartType("disk_part", p) ){
+		p.printPart();
+	}
 	
 	
 	ros::waitForShutdown();

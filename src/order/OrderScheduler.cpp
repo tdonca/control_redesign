@@ -81,21 +81,45 @@ namespace order {
 			
 			// if success remove shipment from queue
 			if( result->success ){
-				ROS_INFO("Shipment goal completed.");
+				ROS_INFO("Shipment goal completed, moving to the next shipment.");
+				m_shipment_q.pop_front();
 			}
 			else{
-				ROS_ERROR("Shipment goal failed!");
-			}
-			ROS_INFO("Message: %s", result->message.c_str());
+				ROS_ERROR("Shipment goal failed! Why???");
+				ROS_INFO("Message: %s", result->message.c_str());
+			}	
 		}
 		else{
+			ROS_ERROR("Shipment Action did not succeed: %s", result->message.c_str());
+			// deal with failure
 			
-			ROS_ERROR("Shipment Action did not succeed!");
+			if( result->fail_reason == result->TRY_AGAIN ){
+				ROS_ERROR("Retrying the current shipment...");
+				control_redesign::FillShipmentGoal goal;
+					goal.shipment = m_shipment_q.front();
+					m_shipment_ac.sendGoal(goal, std::bind( &OrderScheduler::acb_shipmentFinished, this, std::placeholders::_1,
+																										 std::placeholders::_2 ) );
+			}
+			
+			else if( result->fail_reason == result->NOT_ENOUGH_PARTS ){
+				ROS_ERROR("Not enough useable parts for the shipment! Moving on to the next shipment...");
+				m_shipment_q.pop_front();
+				if( m_shipment_q.size() > 0 ){
+					control_redesign::FillShipmentGoal goal;
+					goal.shipment = m_shipment_q.front();
+					m_shipment_ac.sendGoal(goal, std::bind( &OrderScheduler::acb_shipmentFinished, this, std::placeholders::_1,
+																										 std::placeholders::_2 ) );
+				}	
+			}
+			
+			else if( result->fail_reason == result->ROBOT_STUCK ){
+				ROS_ERROR("Robot is not responsive anymore, quitting...");
+			}
+			
+			else {
+				ROS_ERROR("Invalid fail reason provided, quitting...");
+			}
 		}
-		
-		// use msg to find out why and if to retry
-		
-		// does result still get filled if ABORTED?	
 	}
 	
 	

@@ -44,37 +44,39 @@ roslaunch_add_file_check(launch)
 
 add_message_files(
   FILES
-  #~ Location.msg
-  #~ State.msg
-  #~ Part.msg
-  #~ Shipment.msg
-  #~ TransitionAction.msg
-  #~ GripperAction.msg
+	  #~ Location.msg
+	  #~ State.msg
+	  #~ Part.msg
+	  #~ Shipment.msg
+	  #~ TransitionAction.msg
+	  #~ GripperAction.msg
 )
 
 
 add_service_files(
   FILES
-  #~ Belt.srv
-  #~ CurrentRobotState.srv
-  #~ UpdateRobotState.srv
-  #~ PathBetweenStates.srv
-  #~ FindParts.srv
-  #~ EEState.srv
-  #~ UpdatePartsAvailability.srv
-  #~ UpdatePart.srv
-  #~ CurrentPartsStates.srv
-  #~ HeldPartPose.srv
-  #~ ActiveBoxState.srv
+	FindPartType.srv
+	ReleasePart.srv
+	  #~ Belt.srv
+	  #~ CurrentRobotState.srv
+	  #~ UpdateRobotState.srv
+	  #~ PathBetweenStates.srv
+	  #~ FindParts.srv
+	  #~ EEState.srv
+	  #~ UpdatePartsAvailability.srv
+	  #~ UpdatePart.srv
+	  #~ CurrentPartsStates.srv
+	  #~ HeldPartPose.srv
+	  #~ ActiveBoxState.srv
 )
 
 
 add_action_files(
   DIRECTORY action
   FILES
-  FillShipment.action
-  #~ ExecuteTransition.action
-  #~ ExecuteGripper.action
+	FillShipment.action
+	  #~ ExecuteTransition.action
+	  #~ ExecuteGripper.action
 )
 
 
@@ -182,6 +184,7 @@ target_link_libraries( task_server ${catkin_LIBRARIES} )
 target_sources( task_server 
 	PUBLIC 
 		src/task/TaskPlanner.cpp
+		src/client/WorldStateClient.cpp
 )
 
 

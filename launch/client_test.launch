@@ -1,0 +1,15 @@
+
+<launch>
+
+	<arg name="debug" default="false" />
+	  <arg unless="$(arg debug)" name="launch_prefix" value="" />
+	  <arg     if="$(arg debug)" name="launch_prefix" value="gdb --ex run --args" />
+	  
+	  <remap from="joint_states" to="ariac/joint_states" />
+	  
+	  <param name="/use_sim_time" value="true" />
+	 
+	
+	<node name="client_test_node"   pkg="control_redesign"   type="client_test"   output="screen"   launch-prefix="$(arg launch_prefix)" />
+
+</launch>

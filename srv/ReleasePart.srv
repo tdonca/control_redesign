@@ -1,0 +1,9 @@
+
+# release a part that was marked for a shipment, so it becomes available again
+
+string name
+
+---
+
+bool success
+string message

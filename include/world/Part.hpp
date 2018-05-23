@@ -54,6 +54,8 @@ namespace world {
 			
 			void updatePose( geometry_msgs::Pose p) { m_pose = p; }
 			void markFaulty() { m_faulty = true; }
+			void markUsed() { m_available = false; }
+			void markAvailable() { m_available = true; }
 			
 			void printPart();
 			

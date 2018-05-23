@@ -50,7 +50,7 @@ namespace world {
 		// move to init position (FACEBIN2)
 		State starting;
 		if( graph.findState( "FACEBIN2", starting ) ){
-			ROS_INFO("Initializing robot to start position (IMPLEMENT!).");
+			ROS_INFO("Initializing robot to start position.");
 			m_state = IN_TRANSITION;
 			m_graph_state = "FACEBIN2";
 			// wait for collision scene to load

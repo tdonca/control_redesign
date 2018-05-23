@@ -22,8 +22,9 @@ namespace order {
 				m_shipment_q()
 				
 			{
-				m_order_sub = m_node.subscribe( "ariac/orders", 1, &OrderScheduler::cb_newOrder, this );
 				m_shipment_ac.waitForServer();
+				m_order_sub = m_node.subscribe( "ariac/orders", 1, &OrderScheduler::cb_newOrder, this );
+				
 				ROS_INFO("Order Scheduler initialized.");	
 			}
 			

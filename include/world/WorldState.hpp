@@ -19,6 +19,8 @@
 #include <tf2_msgs/TFMessage.h>
 #include <tf2_ros/transform_listener.h>
 #include <moveit/move_group_interface/move_group_interface.h>
+#include <control_redesign/FindPartType.h>
+#include <control_redesign/ReleasePart.h>
 
 
 namespace world {
@@ -44,6 +46,8 @@ namespace world {
 				m_node(),
 				m_update_t(),
 				m_tf_sub(),
+				m_find_part_type_srv(),
+				m_release_part_srv(),
 				m_tfBuf(),
 				m_tfListener(m_tfBuf),
 				m_move_group("manipulator")
@@ -78,7 +82,9 @@ namespace world {
 			
 			bool testFunction();
 			
-			bool sv_gripperPart();
+			bool sv_findPartType( control_redesign::FindPartType::Request & req, control_redesign::FindPartType::Response & rsp );
+			
+			bool sv_releasePart( control_redesign::ReleasePart::Request & req, control_redesign::ReleasePart::Response & rsp );
 			
 		private:
 		
@@ -103,6 +109,8 @@ namespace world {
 			ros::NodeHandle m_node;
 			ros::Timer m_update_t;
 			ros::Subscriber m_tf_sub;
+			ros::ServiceServer m_find_part_type_srv;
+			ros::ServiceServer m_release_part_srv;
 			
 			tf2_ros::Buffer m_tfBuf;
 			tf2_ros::TransformListener m_tfListener;
