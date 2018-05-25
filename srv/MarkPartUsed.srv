@@ -1,0 +1,9 @@
+
+# mark a part for a shipment, so it becomes unavailable
+
+string name
+
+---
+
+bool success
+string message

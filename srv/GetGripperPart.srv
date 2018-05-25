@@ -1,0 +1,9 @@
+
+# Get the information of the part held by the robot
+
+---
+
+bool success
+string message
+
+Part part

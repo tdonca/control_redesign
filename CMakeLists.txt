@@ -44,6 +44,7 @@ roslaunch_add_file_check(launch)
 
 add_message_files(
   FILES
+	Part.msg
 	  #~ Location.msg
 	  #~ State.msg
 	  #~ Part.msg
@@ -56,7 +57,10 @@ add_message_files(
 add_service_files(
   FILES
 	FindPartType.srv
+	MarkPartUsed.srv
 	ReleasePart.srv
+	GetGripperPart.srv
+	GetBoxParts.srv
 	  #~ Belt.srv
 	  #~ CurrentRobotState.srv
 	  #~ UpdateRobotState.srv
@@ -183,8 +187,10 @@ target_link_libraries( task_server ${catkin_LIBRARIES} )
 # Link other class files
 target_sources( task_server 
 	PUBLIC 
-		src/task/TaskPlanner.cpp
 		src/client/WorldStateClient.cpp
+		
+		src/task/TaskPlanner.cpp
+		src/task/TaskManager.cpp
 )
 
 

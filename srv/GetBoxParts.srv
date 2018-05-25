@@ -1,0 +1,9 @@
+
+# Get a list of parts currently in the box
+
+---
+
+bool success
+string message
+
+Part[] parts

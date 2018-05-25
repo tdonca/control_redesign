@@ -21,10 +21,15 @@ namespace world {
 		addBox(b1);
 		
 		
-		//~ // DEBUG -- REMOVE!!
-			//~ Part part("gasket_part_63", geometry_msgs::Pose(), &m_removed);
-			//~ addNewPartToBox(part);
-		//~ // DEBUNG -- REMOVE!!
+		// DEBUG -- REMOVE!!
+			//~ Part part1("gasket_part_63", geometry_msgs::Pose(), &m_removed);
+			//~ addNewPartToGripper(part1);
+			//~ Part part2("gear_part_8", geometry_msgs::Pose(), &m_removed);
+			//~ addNewPartToBox(part2);
+			//~ Part part3("pulley_part_60", geometry_msgs::Pose(), &m_removed);
+			//~ addNewPartToBox(part3);
+			
+		// DEBUG -- REMOVE!!
 		
 		
 		// Sensors
@@ -56,9 +61,11 @@ namespace world {
 		m_robot->initialize(m_graph);
 		
 		// services
-		m_find_part_type_srv = m_node.advertiseService( "find_part_type", &WorldState::sv_findPartType, this );
-		m_release_part_srv = m_node.advertiseService( "release_part", &WorldState::sv_releasePart, this );
-		
+		m_find_part_type_srv = 	m_node.advertiseService( "find_part_type", &WorldState::sv_findPartType, this );
+		m_mark_part_used_srv = 	m_node.advertiseService( "mark_part_used", &WorldState::sv_markPartUsed, this );
+		m_release_part_srv = 	m_node.advertiseService( "release_part", &WorldState::sv_releasePart, this );
+		m_gripper_part_srv = 	m_node.advertiseService( "gripper_part", &WorldState::sv_getGripperPart, this );
+		m_box_parts_srv = 		m_node.advertiseService( "box_parts", &WorldState::sv_getBoxParts, this );
 			
 		return true;
 	}
@@ -202,6 +209,7 @@ namespace world {
 		
 		return true;
 	}
+	
 			
 	
 	bool WorldState::addNewPartToBox( Part part ){
@@ -226,7 +234,27 @@ namespace world {
 			ROS_ERROR("Cannot add part to box, there are no boxes in the world!");
 		}
 	}		
-			
+	
+	
+	
+	bool WorldState::addNewPartToGripper( Part part ){
+		
+		if( m_parts[part.getType()][part.getName()].expired() ){
+			// add part shared_ptr to bin
+			std::shared_ptr<Part> part_ptr = std::make_shared<Part>(part);
+			m_gripper.addPart(part_ptr);
+			// add part weak_ptr to world
+			m_parts[part.getType()][part.getName()] = part_ptr;
+		}
+		else{
+			ROS_ERROR("Could not add %s to the world, it already exists!", part.getName().c_str());
+			return false;
+		}
+	}
+	
+	
+	
+	
 	bool WorldState::removePart( std::string name ){
 		
 		std::string type = getTypeFromName(name);
@@ -379,14 +407,12 @@ namespace world {
 				
 				std::shared_ptr<Part> p = it->second.lock();
 				if( p->isAvailable() && !p->isFaulty() ){
-					rsp.name = p->getName();
-					rsp.type = p->getType();
-					rsp.id = getIDFromName(rsp.name);
-					rsp.current_pose = p->getPose();
-					ROS_INFO("Marking %s to be used in the next shipment.", rsp.name.c_str());
-					p->markUsed();
+					rsp.part.name = p->getName();
+					rsp.part.type = p->getType();
+					rsp.part.id = getIDFromName(rsp.part.name);
+					rsp.part.current_pose = p->getPose();
 					rsp.success = true;
-					rsp.message = "Found the part: " + rsp.name;
+					rsp.message = "Found the part: " + rsp.part.name;
 					return true;
 				}
 			}
@@ -396,6 +422,24 @@ namespace world {
 			return true;
 		}
 	}
+			
+	
+	bool WorldState::sv_markPartUsed( control_redesign::MarkPartUsed::Request & req, control_redesign::MarkPartUsed::Response & rsp ){
+					
+		std::string type = getTypeFromName(req.name);
+		if( !m_parts[type][req.name].expired() ){
+			m_parts[type][req.name].lock()->markUsed();
+			rsp.success = true;
+			return true;
+		}
+		else{
+			rsp.success = false;
+			rsp.message = "Could not find the part: " + req.name;
+			return true;	
+		}			
+		
+	}
+	
 			
 	
 	bool WorldState::sv_releasePart( control_redesign::ReleasePart::Request & req, control_redesign::ReleasePart::Response & rsp ){
@@ -413,5 +457,51 @@ namespace world {
 		}
 		
 	}
+	
+	
+	bool WorldState::sv_getGripperPart( control_redesign::GetGripperPart::Request & req, control_redesign::GetGripperPart::Response & rsp ){
+		
+		std::vector<Part> gp = m_gripper.getParts();
+		if(gp.size() > 0){
+			rsp.part.name = gp[0].getName();
+			rsp.part.type = getTypeFromName(rsp.part.name);
+			rsp.part.id = getIDFromName(rsp.part.name);
+			rsp.part.current_pose = gp[0].getPose();
+			rsp.success = true;
+			rsp.message = "Found the gripper part " + rsp.part.name;
+		}
+		else{
+			rsp.success = false;
+			rsp.message = "Gripper is not holding any part.";
+		}
+		
+		return true;
+	}
+			
+	
+	
+	bool WorldState::sv_getBoxParts( control_redesign::GetBoxParts::Request & req, control_redesign::GetBoxParts::Response & rsp ){
+		
+		if( m_boxes.size() > 0 ){
+			std::vector<Part> bp = m_boxes[0]->getParts();
+			rsp.parts.resize(bp.size());
+			for( int i = 0; i < bp.size(); ++i ){
+				rsp.parts[i].name = bp[i].getName();
+				rsp.parts[i].type = getTypeFromName(rsp.parts[i].name);
+				rsp.parts[i].id = getIDFromName(rsp.parts[i].name);
+				rsp.parts[i].current_pose = bp[i].getPose();
+			}
+			rsp.success = true;
+			rsp.message = "Found all " + std::to_string(bp.size()) + " parts in the box.";
+		}
+		else{
+			rsp.success = false;
+			rsp.message = "There are no active boxes in the world!";
+		}
+		
+		return true;
+	}
+			
+			
 
 }

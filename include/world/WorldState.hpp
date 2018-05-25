@@ -20,7 +20,10 @@
 #include <tf2_ros/transform_listener.h>
 #include <moveit/move_group_interface/move_group_interface.h>
 #include <control_redesign/FindPartType.h>
+#include <control_redesign/MarkPartUsed.h>
 #include <control_redesign/ReleasePart.h>
+#include <control_redesign/GetGripperPart.h>
+#include <control_redesign/GetBoxParts.h>
 
 
 namespace world {
@@ -47,7 +50,10 @@ namespace world {
 				m_update_t(),
 				m_tf_sub(),
 				m_find_part_type_srv(),
+				m_mark_part_used_srv(),
 				m_release_part_srv(),
+				m_gripper_part_srv(),
+				m_box_parts_srv(),
 				m_tfBuf(),
 				m_tfListener(m_tfBuf),
 				m_move_group("manipulator")
@@ -63,6 +69,8 @@ namespace world {
 			bool addNewPart( Part part, int bin );
 			
 			bool addNewPartToBox( Part part );
+			
+			bool addNewPartToGripper( Part part );
 			
 			bool removePart ( std::string part_name );
 			
@@ -84,7 +92,13 @@ namespace world {
 			
 			bool sv_findPartType( control_redesign::FindPartType::Request & req, control_redesign::FindPartType::Response & rsp );
 			
+			bool sv_markPartUsed( control_redesign::MarkPartUsed::Request & req, control_redesign::MarkPartUsed::Response & rsp );
+			
 			bool sv_releasePart( control_redesign::ReleasePart::Request & req, control_redesign::ReleasePart::Response & rsp );
+			
+			bool sv_getGripperPart( control_redesign::GetGripperPart::Request & req, control_redesign::GetGripperPart::Response & rsp );
+			
+			bool sv_getBoxParts( control_redesign::GetBoxParts::Request & req, control_redesign::GetBoxParts::Response & rsp );
 			
 		private:
 		
@@ -110,7 +124,10 @@ namespace world {
 			ros::Timer m_update_t;
 			ros::Subscriber m_tf_sub;
 			ros::ServiceServer m_find_part_type_srv;
+			ros::ServiceServer m_mark_part_used_srv;
 			ros::ServiceServer m_release_part_srv;
+			ros::ServiceServer m_gripper_part_srv;
+			ros::ServiceServer m_box_parts_srv;
 			
 			tf2_ros::Buffer m_tfBuf;
 			tf2_ros::TransformListener m_tfListener;

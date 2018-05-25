@@ -3,7 +3,10 @@
 
 #include <ros/ros.h>
 #include <control_redesign/FindPartType.h>
+#include <control_redesign/MarkPartUsed.h>
 #include <control_redesign/ReleasePart.h>
+#include <control_redesign/GetGripperPart.h>
+#include <control_redesign/GetBoxParts.h>
 
 
 namespace client {
@@ -19,11 +22,16 @@ namespace client {
 			WorldStateClient()
 			:	m_node(),
 				m_find_part_type_srv(),
-				m_release_part_srv()
+				m_release_part_srv(),
+				m_gripper_part_srv(),
+				m_box_parts_srv()
 			
 			{
 				m_find_part_type_srv = m_node.serviceClient<control_redesign::FindPartType>("find_part_type");
+				m_mark_part_used_srv = m_node.serviceClient<control_redesign::MarkPartUsed>("mark_part_used");
 				m_release_part_srv = m_node.serviceClient<control_redesign::ReleasePart>("release_part");
+				m_gripper_part_srv = m_node.serviceClient<control_redesign::GetGripperPart>("gripper_part");
+				m_box_parts_srv = m_node.serviceClient<control_redesign::GetBoxParts>("box_parts");
 			}
 			
 			
@@ -31,7 +39,13 @@ namespace client {
 			
 			bool getPartType( std::string type, PlannerPart & part_found );
 			
+			bool markPartUsed( PlannerPart const & part );
+			
 			bool releasePart( PlannerPart const & part );
+			
+			bool getGripperPart( PlannerPart & part_found );
+			
+			bool getBoxParts( std::vector<PlannerPart> & parts_found );
 		
 		private:
 		
@@ -41,7 +55,10 @@ namespace client {
 			
 			ros::NodeHandle m_node;
 			ros::ServiceClient m_find_part_type_srv;
+			ros::ServiceClient m_mark_part_used_srv;
 			ros::ServiceClient m_release_part_srv;
+			ros::ServiceClient m_gripper_part_srv;
+			ros::ServiceClient m_box_parts_srv;
 		
 	};
 	

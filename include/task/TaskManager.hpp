@@ -5,7 +5,11 @@
 #include <string>
 #include <memory>
 #include <task/Task.hpp>
-#include <task/FindPartsTask.hpp>
+#include <task/AddPartTask.hpp>
+#include <task/PutPartsBackTask.hpp>
+#include <task/RemoveFaultyPartTask.hpp>
+#include <task/ReplacePartTask.hpp>
+#include <task/FinishShipmentTask.hpp>
 #include <client/WorldStateClient.hpp>
 #include <actionlib/server/simple_action_server.h>
 #include <control_redesign/FillShipmentAction.h>
@@ -18,24 +22,39 @@ namespace task {
 		
 		public:
 		
-			TaskManager( client::WorldStateClient & wc, actionlib::SimpleActionServer<control_redesign::FillShipmentAction> & as )
-			:	m_tasks(),
-				m_world_client(wc),
+			TaskManager( actionlib::SimpleActionServer<control_redesign::FillShipmentAction> & as )
+			:	m_world_client(),
+				m_tasks_q(),
+				m_parts_q(),
 				m_shipment_as(as)
 			{}
 			
-			Task * createFindPartsTask( osrf_gear::Shipment const & current_shipment, std::deque<client::PlannerPart> & parts_queue ) {
-				std::unique_ptr<Task> t = std::unique_ptr<Task>( new FindPartsTask( current_shipment, parts_queue, m_world_client, m_shipment_as ) );
-				m_tasks.push_back(std::move(t));
-				ROS_INFO("Created a FindPartsTask.");
-				return m_tasks.back().get();
-			} 
+			
+			bool hasNextTask() const;
+			
+			void executeNextTask();
+			
+			void receiveNewShipment( const osrf_gear::Shipment & shipment );
+			
+			void createAddPartTask( client::PlannerPart const & part );
+			
+			void createPutPartsBackTask( std::vector<client::PlannerPart> const box_parts );
+			
+			void createRemoveFaultyPartTask();
+			
+			void createReplacePartTask();
+			
+			void createFinishShipmentTask();
 		
-		
+
+
+
 		private:
 		
-			std::vector<std::unique_ptr<Task> > m_tasks;
-			client::WorldStateClient & m_world_client;
+			client::WorldStateClient m_world_client;
+			std::deque< std::unique_ptr<Task> > m_tasks_q;
+			std::deque<client::PlannerPart> m_parts_q;
+			
 			actionlib::SimpleActionServer<control_redesign::FillShipmentAction> & m_shipment_as;
 			
 	};
