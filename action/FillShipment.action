@@ -1,0 +1,22 @@
+
+# Goal
+
+osrf_gear/Shipment shipment
+
+
+---
+
+# Results
+
+bool success
+string message
+
+uint8 fail_reason
+
+uint8 NOT_ENOUGH_PARTS = 1
+uint8 ROBOT_STUCK = 2
+uint8 TRY_AGAIN = 3 
+---
+
+# Feedback
+

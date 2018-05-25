@@ -1,0 +1,16 @@
+
+<launch>
+
+	<arg name="debug" default="false" />
+	  <arg unless="$(arg debug)" name="launch_prefix" value="" />
+	  <arg     if="$(arg debug)" name="launch_prefix" value="gdb --ex run --args" />
+	  
+	  <remap from="joint_states" to="ariac/joint_states" />
+	  
+	  <param name="/use_sim_time" value="true" />
+	  
+	<node name="scene_collisions_node" pkg="load_scene" type="load_scene_node" />
+	
+	<node name="world_server_node"   pkg="control_redesign"   type="world_server"   output="screen"   launch-prefix="$(arg launch_prefix)" />
+
+</launch>

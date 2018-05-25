@@ -1,0 +1,12 @@
+
+# Find an *available* specific part of a given type
+
+string type
+
+---
+
+bool success
+string message
+
+Part part
+
